@@ -2,6 +2,13 @@
 
 Single-user local web console for software project intake, structured requirement tracking, change requests, approvals, and generated requirement documents.
 
+## Language Support
+
+- Default locale: Chinese (`zh`)
+- Supported locales: Chinese (`zh`) and English (`en`)
+- Switch language from the top-right toggle in the shared page header
+- The selected locale is stored in a `locale` cookie and reused across the site
+
 ## Prerequisites
 
 - Node.js 22+
