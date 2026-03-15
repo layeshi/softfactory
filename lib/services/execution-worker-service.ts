@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 import { createExecutionArtifact } from "@/lib/services/execution-artifact-service";
 import { buildExecutionTaskPackage } from "@/lib/services/execution-package-service";
 import { createExecutionCommandRunner } from "@/lib/services/execution-command-service";
-import { ensureProjectRepo } from "@/lib/services/repo-service";
+import { createExecutionWorktree, ensureProjectRepo } from "@/lib/services/repo-service";
 
 async function getQueuedRun() {
   return prisma.executionRun.findFirst({
@@ -51,9 +51,14 @@ export async function processNextExecutionRun() {
   const repo = await ensureProjectRepo(queuedRun.project.slug);
   const runDirectory = join(repo.projectRoot, "runs", queuedRun.id);
   const worktreePath = join(repo.tempPath, queuedRun.id);
+  const branchName = `run-${queuedRun.id}`;
 
   await mkdir(runDirectory, { recursive: true });
-  await mkdir(worktreePath, { recursive: true });
+  await createExecutionWorktree({
+    repoPath: repo.repoPath,
+    worktreePath,
+    branchName,
+  });
 
   await prisma.executionRun.update({
     where: {
@@ -69,7 +74,8 @@ export async function processNextExecutionRun() {
   });
 
   const taskPackage = await buildExecutionTaskPackage(queuedRun.id);
-  const runner = createExecutionCommandRunner({ mode: "fake" });
+  const taskPackagePath = join(runDirectory, "task.json");
+  const runner = createExecutionCommandRunner();
   while (true) {
     const refreshedRun = await prisma.executionRun.findUniqueOrThrow({
       where: {
@@ -141,6 +147,7 @@ export async function processNextExecutionRun() {
         stageType: nextStage,
         runDirectory,
         worktreePath,
+        taskPackagePath,
       });
 
       const needsDecision = taskPackage.workflow.decisionStages.includes(nextStage);
