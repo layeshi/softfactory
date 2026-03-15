@@ -117,6 +117,13 @@ a {
   margin-bottom: 1.5rem;
 }
 
+.hero-topbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
 .hero-panel h2 {
   font-size: clamp(2.6rem, 4vw, 4.6rem);
 }
@@ -246,7 +253,8 @@ a {
 
 .action-link,
 .entry-form button,
-.inline-form button {
+.inline-form button,
+.language-switcher button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -255,6 +263,35 @@ a {
   background: var(--ink);
   color: #fffaf2;
   cursor: pointer;
+}
+
+.language-switcher {
+  display: grid;
+  gap: 0.45rem;
+  justify-items: end;
+}
+
+.language-switcher-buttons {
+  display: inline-flex;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.language-switcher button {
+  min-width: 5.5rem;
+  padding: 0.65rem 0.9rem;
+  background: transparent;
+  color: var(--ink);
+}
+
+.language-switcher button[data-active="true"] {
+  background: var(--ink);
+  color: #fffaf2;
+}
+
+.language-switcher button:disabled {
+  cursor: default;
+  opacity: 1;
 }
 
 .entry-form {
