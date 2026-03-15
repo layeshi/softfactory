@@ -52,3 +52,38 @@ export const APPROVAL_TYPES = [
   "test_confirmation",
   "change_request_confirmation",
 ] as const;
+
+export const EXECUTION_RUN_TYPES = ["full_run", "stage_run"] as const;
+
+export const EXECUTION_MODES = ["manual_gate", "auto_flow"] as const;
+
+export const EXECUTION_RUN_STATUSES = [
+  "queued",
+  "preparing",
+  "running",
+  "waiting_for_decision",
+  "succeeded",
+  "failed",
+  "cancelled",
+] as const;
+
+export const EXECUTION_STAGE_RUN_STATUSES = [
+  "pending",
+  "running",
+  "waiting_for_decision",
+  "succeeded",
+  "failed",
+  "skipped",
+] as const;
+
+export const EXECUTION_DECISION_TYPES = [
+  "design_review",
+  "implementation_review",
+  "test_review",
+] as const;
+
+export const EXECUTION_DECISION_STATUSES = [
+  "pending",
+  "approved",
+  "rejected",
+] as const;

@@ -32,12 +32,35 @@ npm run dev
 
 Open `http://localhost:3000`.
 
+## Worker
+
+Phase 2 adds a local execution worker for requirement runs.
+
+```bash
+npm run worker
+```
+
+The worker claims one queued run, prepares its local run directory, writes `task.json`, and processes the next stages.
+
+## Execution Runner Modes
+
+- Default mode: `fake`
+- Reserved adapter mode: `real`
+
+The fake runner writes deterministic logs, result snapshots, and markdown artifacts without needing Claude Code. To switch modes:
+
+```bash
+SOFTFACTORY_EXECUTION_RUNNER=real npm run worker
+```
+
+The real adapter now exists as the integration boundary, but still needs final local Claude Code command wiring before it can execute real tasks.
+
 ## Verify
 
 ```bash
 npm run test -- --run
 npm run lint
-npm run build
+DATABASE_URL=file:/tmp/softfactory-dev.db npm run build
 ```
 
 ## Workspace Documents

@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { logActivity } from "@/lib/services/activity-service";
+import { ensureProjectRepo } from "@/lib/services/repo-service";
 import {
   createProjectSchema,
   type CreateProjectInput,
@@ -31,6 +32,8 @@ export async function createProject(input: CreateProjectInput) {
       slug,
     },
   });
+
+  await ensureProjectRepo(project.slug);
 
   await logActivity({
     projectId: project.id,
@@ -102,6 +105,12 @@ export async function getProjectDetail(projectId: string) {
         orderBy: {
           createdAt: "desc",
         },
+      },
+      executionRuns: {
+        orderBy: {
+          createdAt: "desc",
+        },
+        take: 5,
       },
     },
   });

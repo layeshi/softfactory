@@ -21,6 +21,7 @@ model Project {
   documents      Document[]
   approvals      Approval[]
   activityLogs   ActivityLog[]
+  executionRuns  ExecutionRun[]
 }
 
 model Requirement {
@@ -41,6 +42,7 @@ model Requirement {
   approvals             Approval[]
   activityLogs          ActivityLog[]
   targetChanges         ChangeRequest[]             @relation("TargetRequirement")
+  executionRuns         ExecutionRun[]
 }
 
 model RequirementStage {
@@ -115,4 +117,73 @@ model ActivityLog {
   project         Project        @relation(fields: [projectId], references: [id])
   requirement     Requirement?   @relation(fields: [requirementId], references: [id])
   changeRequest   ChangeRequest? @relation(fields: [changeRequestId], references: [id])
+}
+
+model ExecutionRun {
+  id              String              @id @default(cuid())
+  projectId       String
+  requirementId   String
+  runType         String
+  executionMode   String
+  targetStage     String?
+  status          String              @default("queued")
+  currentStage    String?
+  workspacePath   String?
+  repoPath        String?
+  worktreePath    String?
+  taskPackagePath String?
+  startedAt       DateTime?
+  finishedAt      DateTime?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  project         Project             @relation(fields: [projectId], references: [id])
+  requirement     Requirement         @relation(fields: [requirementId], references: [id])
+  stageRuns       ExecutionStageRun[]
+  artifacts       ExecutionArtifact[]
+  decisions       ExecutionDecision[]
+}
+
+model ExecutionStageRun {
+  id                String              @id @default(cuid())
+  executionRunId    String
+  stageType         String
+  status            String              @default("pending")
+  attempt           Int                 @default(1)
+  inputSnapshotPath String?
+  resultSnapshotPath String?
+  stdoutPath        String?
+  stderrPath        String?
+  startedAt         DateTime?
+  finishedAt        DateTime?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  executionRun      ExecutionRun        @relation(fields: [executionRunId], references: [id])
+  artifacts         ExecutionArtifact[]
+  decisions         ExecutionDecision[]
+}
+
+model ExecutionArtifact {
+  id                  String            @id @default(cuid())
+  executionRunId      String
+  executionStageRunId String?
+  artifactType        String
+  title               String
+  filePath            String
+  summary             String?
+  createdAt           DateTime          @default(now())
+  executionRun        ExecutionRun      @relation(fields: [executionRunId], references: [id])
+  executionStageRun   ExecutionStageRun? @relation(fields: [executionStageRunId], references: [id])
+}
+
+model ExecutionDecision {
+  id                  String            @id @default(cuid())
+  executionRunId      String
+  executionStageRunId String?
+  decisionType        String
+  status              String            @default("pending")
+  comment             String?
+  decidedAt           DateTime?
+  createdAt           DateTime          @default(now())
+  executionRun        ExecutionRun      @relation(fields: [executionRunId], references: [id])
+  executionStageRun   ExecutionStageRun? @relation(fields: [executionStageRunId], references: [id])
 }

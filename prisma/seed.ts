@@ -3,6 +3,10 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 async function main() {
+  await prisma.executionDecision.deleteMany();
+  await prisma.executionArtifact.deleteMany();
+  await prisma.executionStageRun.deleteMany();
+  await prisma.executionRun.deleteMany();
   await prisma.activityLog.deleteMany();
   await prisma.approval.deleteMany();
   await prisma.document.deleteMany();
@@ -57,6 +61,61 @@ async function main() {
       documentType: "requirement",
       title: "Alpha Factory Requirement Brief",
       filePath: "workspace/projects/alpha-factory/docs/requirements/alpha-factory-requirement.md",
+    },
+  });
+
+  const executionRun = await prisma.executionRun.create({
+    data: {
+      projectId: project.id,
+      requirementId: requirement.id,
+      runType: "full_run",
+      executionMode: "manual_gate",
+      status: "waiting_for_decision",
+      currentStage: "design",
+      workspacePath: "/tmp/softfactory-workspace/projects/alpha-factory",
+      repoPath: "/tmp/softfactory-workspace/projects/alpha-factory/repo",
+      worktreePath: "/tmp/softfactory-workspace/projects/alpha-factory/temp/run-design",
+      taskPackagePath:
+        "/tmp/softfactory-workspace/projects/alpha-factory/runs/seed-run/task.json",
+      startedAt: new Date(),
+    },
+  });
+
+  const stageRun = await prisma.executionStageRun.create({
+    data: {
+      executionRunId: executionRun.id,
+      stageType: "design",
+      status: "waiting_for_decision",
+      inputSnapshotPath:
+        "/tmp/softfactory-workspace/projects/alpha-factory/runs/seed-run/design-input.json",
+      resultSnapshotPath:
+        "/tmp/softfactory-workspace/projects/alpha-factory/runs/seed-run/design-result.json",
+      stdoutPath:
+        "/tmp/softfactory-workspace/projects/alpha-factory/runs/seed-run/stdout.log",
+      stderrPath:
+        "/tmp/softfactory-workspace/projects/alpha-factory/runs/seed-run/stderr.log",
+      startedAt: new Date(),
+    },
+  });
+
+  await prisma.executionArtifact.create({
+    data: {
+      executionRunId: executionRun.id,
+      executionStageRunId: stageRun.id,
+      artifactType: "design_summary",
+      title: "Seeded Design Summary",
+      filePath:
+        "/tmp/softfactory-workspace/projects/alpha-factory/runs/seed-run/artifacts/design-summary.md",
+      summary: "Seeded design output for the first execution run.",
+    },
+  });
+
+  await prisma.executionDecision.create({
+    data: {
+      executionRunId: executionRun.id,
+      executionStageRunId: stageRun.id,
+      decisionType: "design_review",
+      status: "pending",
     },
   });
 }

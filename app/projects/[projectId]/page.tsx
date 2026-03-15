@@ -6,6 +6,7 @@ import { AppShell } from "@/components/layout/app-shell";
 import { ApprovalList } from "@/components/approvals/approval-list";
 import { ChangeRequestForm } from "@/components/change-requests/change-request-form";
 import { DocumentList } from "@/components/documents/document-list";
+import { RunHistoryList } from "@/components/execution/run-history-list";
 import { RequirementForm } from "@/components/requirements/requirement-form";
 import { StageTimeline } from "@/components/requirements/stage-timeline";
 import { getRequestLocale } from "@/lib/i18n/get-locale";
@@ -233,6 +234,21 @@ export default async function ProjectDetailPage({
             locale={locale}
             typeLabels={t.status.stage}
             documents={activeProject.documents}
+          />
+        </article>
+      </section>
+
+      <section className="section-span">
+        <article className="stack-card">
+          <span className="metric-label">{t.pages.projectDetail.recentRuns}</span>
+          <h3>{t.pages.projectDetail.recentRunsDescription}</h3>
+          <RunHistoryList
+            labels={{
+              runType: t.status.execution,
+              status: t.status.execution,
+              openRun: t.common.actions.openRun,
+            }}
+            runs={activeProject.executionRuns}
           />
         </article>
       </section>

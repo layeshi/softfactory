@@ -48,6 +48,10 @@ export type Messages = {
       addRequirement: string;
       submitChangeRequest: string;
       generateRequirementDoc: string;
+      startRun: string;
+      approve: string;
+      reject: string;
+      openRun: string;
       open: string;
       backToProject: string;
     };
@@ -63,6 +67,15 @@ export type Messages = {
       originalRequest: string;
       normalizedDescription: string;
       priority: string;
+      runType: string;
+      executionMode: string;
+      targetStage: string;
+      currentStage: string;
+      taskPackage: string;
+      worktree: string;
+      repo: string;
+      workspace: string;
+      comment: string;
       changeType: string;
       targetRequirement: string;
       proposedTitle: string;
@@ -96,6 +109,8 @@ export type Messages = {
       goal: string;
       quickFacts: string;
       pendingApprovals: string;
+      recentRuns: string;
+      recentRunsDescription: string;
       requirementBacklog: string;
       addRequirement: string;
       changeManagement: string;
@@ -110,6 +125,17 @@ export type Messages = {
       context: string;
       originalRequest: string;
       version: string;
+      execution: string;
+      executionDescription: string;
+      runHistory: string;
+    };
+    runDetail: {
+      eyebrow: string;
+      title: string;
+      description: string;
+      summary: string;
+      artifacts: string;
+      decisions: string;
     };
     approvals: {
       eyebrow: string;
@@ -127,12 +153,13 @@ export type Messages = {
     addNew: string;
     deleteExisting: string;
   };
-  status: {
+    status: {
     project: Record<string, string>;
     requirement: Record<string, string>;
     stage: Record<string, string>;
     approval: Record<string, string>;
     changeRequest: Record<string, string>;
+    execution: Record<string, string>;
   };
 };
 
@@ -189,6 +216,10 @@ export const messages: Record<Locale, Messages> = {
         addRequirement: "新增需求",
         submitChangeRequest: "提交变更单",
         generateRequirementDoc: "生成需求文档",
+        startRun: "发起运行",
+        approve: "批准",
+        reject: "驳回",
+        openRun: "打开运行",
         open: "打开",
         backToProject: "返回项目",
       },
@@ -204,6 +235,15 @@ export const messages: Record<Locale, Messages> = {
         originalRequest: "原始需求",
         normalizedDescription: "结构化描述",
         priority: "优先级",
+        runType: "运行类型",
+        executionMode: "执行模式",
+        targetStage: "目标阶段",
+        currentStage: "当前阶段",
+        taskPackage: "任务包",
+        worktree: "工作树",
+        repo: "代码库",
+        workspace: "工作区",
+        comment: "备注",
         changeType: "变更类型",
         targetRequirement: "目标需求",
         proposedTitle: "建议标题",
@@ -237,6 +277,8 @@ export const messages: Record<Locale, Messages> = {
         goal: "目标",
         quickFacts: "关键指标",
         pendingApprovals: "待审批",
+        recentRuns: "最近运行",
+        recentRunsDescription: "查看最近的执行任务与状态。",
         requirementBacklog: "需求列表",
         addRequirement: "新增需求",
         changeManagement: "变更管理",
@@ -251,6 +293,17 @@ export const messages: Record<Locale, Messages> = {
         context: "上下文",
         originalRequest: "原始需求",
         version: "版本",
+        execution: "执行",
+        executionDescription: "从当前需求发起完整运行或单阶段运行。",
+        runHistory: "运行历史",
+      },
+      runDetail: {
+        eyebrow: "执行",
+        title: "运行详情",
+        description: "查看单次执行的任务包、日志、产物和决策记录。",
+        summary: "摘要",
+        artifacts: "产物",
+        decisions: "决策",
       },
       approvals: {
         eyebrow: "控制",
@@ -318,6 +371,22 @@ export const messages: Record<Locale, Messages> = {
         add: "新增",
         delete: "删除",
       },
+      execution: {
+        queued: "排队中",
+        preparing: "准备中",
+        running: "运行中",
+        waiting_for_decision: "待确认",
+        succeeded: "已成功",
+        failed: "已失败",
+        cancelled: "已取消",
+        manual_gate: "手动门控",
+        auto_flow: "自动流转",
+        full_run: "完整运行",
+        stage_run: "单阶段运行",
+        design_review: "设计评审",
+        implementation_review: "实现评审",
+        test_review: "测试评审",
+      },
     },
   },
   en: {
@@ -372,6 +441,10 @@ export const messages: Record<Locale, Messages> = {
         addRequirement: "Add requirement",
         submitChangeRequest: "Submit change request",
         generateRequirementDoc: "Generate requirement doc",
+        startRun: "Start run",
+        approve: "Approve",
+        reject: "Reject",
+        openRun: "Open run",
         open: "Open",
         backToProject: "Back to project",
       },
@@ -387,6 +460,15 @@ export const messages: Record<Locale, Messages> = {
         originalRequest: "Original request",
         normalizedDescription: "Normalized description",
         priority: "Priority",
+        runType: "Run type",
+        executionMode: "Execution mode",
+        targetStage: "Target stage",
+        currentStage: "Current stage",
+        taskPackage: "Task package",
+        worktree: "Worktree",
+        repo: "Repository",
+        workspace: "Workspace",
+        comment: "Comment",
         changeType: "Change type",
         targetRequirement: "Target requirement",
         proposedTitle: "Proposed title",
@@ -420,6 +502,8 @@ export const messages: Record<Locale, Messages> = {
         goal: "Goal",
         quickFacts: "Quick facts",
         pendingApprovals: "Pending approvals",
+        recentRuns: "Recent runs",
+        recentRunsDescription: "Review the latest execution tasks and statuses.",
         requirementBacklog: "Requirement backlog",
         addRequirement: "Add requirement",
         changeManagement: "Change management",
@@ -434,6 +518,17 @@ export const messages: Record<Locale, Messages> = {
         context: "Context",
         originalRequest: "Original request",
         version: "Version",
+        execution: "Execution",
+        executionDescription: "Launch a full run or a single-stage run from this requirement.",
+        runHistory: "Run history",
+      },
+      runDetail: {
+        eyebrow: "Execution",
+        title: "Run Detail",
+        description: "Inspect one execution run, including its package, logs, artifacts, and decisions.",
+        summary: "Summary",
+        artifacts: "Artifacts",
+        decisions: "Decisions",
       },
       approvals: {
         eyebrow: "Control",
@@ -500,6 +595,22 @@ export const messages: Record<Locale, Messages> = {
         modify: "Modify",
         add: "Add",
         delete: "Delete",
+      },
+      execution: {
+        queued: "Queued",
+        preparing: "Preparing",
+        running: "Running",
+        waiting_for_decision: "Waiting for decision",
+        succeeded: "Succeeded",
+        failed: "Failed",
+        cancelled: "Cancelled",
+        manual_gate: "Manual Gate",
+        auto_flow: "Auto Flow",
+        full_run: "Full Run",
+        stage_run: "Stage Run",
+        design_review: "Design review",
+        implementation_review: "Implementation review",
+        test_review: "Test review",
       },
     },
   },

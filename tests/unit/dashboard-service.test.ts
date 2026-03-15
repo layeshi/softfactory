@@ -5,6 +5,10 @@ import { getDashboardSummary } from "@/lib/services/dashboard-service";
 import { createProject } from "@/lib/services/project-service";
 
 beforeEach(async () => {
+  await prisma.executionDecision.deleteMany();
+  await prisma.executionArtifact.deleteMany();
+  await prisma.executionStageRun.deleteMany();
+  await prisma.executionRun.deleteMany();
   await prisma.activityLog.deleteMany();
   await prisma.approval.deleteMany();
   await prisma.document.deleteMany();
