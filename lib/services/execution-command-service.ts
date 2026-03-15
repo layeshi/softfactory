@@ -1,7 +1,6 @@
 import { access, mkdir, writeFile } from "node:fs/promises";
-import { execFile } from "node:child_process";
+import { spawn } from "node:child_process";
 import { join } from "node:path";
-import { promisify } from "node:util";
 
 export type ExecutionCommandResult = {
   stdoutPath: string;
@@ -24,8 +23,6 @@ export type ExecutionCommand = {
   args: string[];
 };
 
-const execFileAsync = promisify(execFile);
-
 function buildExecutionPrompt(input: ExecuteStageCommandInput) {
   return [
     `You are executing the ${input.stageType} stage for run ${input.runId}.`,
@@ -44,6 +41,80 @@ async function ensureArtifactFile(path: string, content: string) {
   }
 }
 
+function extractSummary(stdout: string, fallback: string) {
+  const trimmed = stdout.trim();
+
+  if (!trimmed) {
+    return fallback;
+  }
+
+  try {
+    const parsed = JSON.parse(trimmed) as { result?: string };
+    if (typeof parsed.result === "string" && parsed.result.trim()) {
+      return parsed.result.trim();
+    }
+  } catch {
+    return trimmed;
+  }
+
+  return trimmed;
+}
+
+function executeRealCommand(command: ExecutionCommand, cwd: string) {
+  return new Promise<{ stdout: string; stderr: string }>((resolve, reject) => {
+    const child = spawn(command.command, command.args, {
+      cwd,
+      env: process.env,
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    const timeoutMs = Number(process.env.SOFTFACTORY_EXECUTION_TIMEOUT_MS ?? "120000");
+    let stdout = "";
+    let stderr = "";
+    let settled = false;
+
+    const finalize = (callback: () => void) => {
+      if (settled) {
+        return;
+      }
+
+      settled = true;
+      clearTimeout(timeoutHandle);
+      callback();
+    };
+
+    const timeoutHandle = setTimeout(() => {
+      child.kill("SIGTERM");
+      finalize(() => {
+        reject(new Error(`Execution command timed out after ${timeoutMs}ms`));
+      });
+    }, timeoutMs);
+
+    child.stdout?.on("data", (chunk: Buffer | string) => {
+      stdout += chunk.toString();
+    });
+    child.stderr?.on("data", (chunk: Buffer | string) => {
+      stderr += chunk.toString();
+    });
+    child.on("error", (error) => {
+      finalize(() => reject(error));
+    });
+    child.on("close", (code) => {
+      finalize(() => {
+        if (code === 0) {
+          resolve({ stdout, stderr });
+          return;
+        }
+
+        reject(
+          new Error(
+            `Execution command failed with exit code ${code ?? "unknown"}${stderr ? `: ${stderr}` : ""}`,
+          ),
+        );
+      });
+    });
+  });
+}
+
 export function createExecutionCommandRunner(options?: { mode?: "fake" | "real" }) {
   const mode =
     options?.mode ??
@@ -53,7 +124,7 @@ export function createExecutionCommandRunner(options?: { mode?: "fake" | "real" 
     kind: mode,
     buildCommand(input: ExecuteStageCommandInput): ExecutionCommand {
       return {
-        command: "claude",
+        command: process.env.SOFTFACTORY_CLAUDE_COMMAND ?? "claude",
         args: [
           "--print",
           "--output-format",
@@ -74,16 +145,16 @@ export function createExecutionCommandRunner(options?: { mode?: "fake" | "real" 
       const artifactPath = join(artifactDirectory, `${input.stageType}-summary.md`);
       const summary = `${input.stageType} completed for run ${input.runId}`;
 
+      await mkdir(input.runDirectory, { recursive: true });
       await mkdir(input.worktreePath, { recursive: true });
       await mkdir(artifactDirectory, { recursive: true });
 
       if (mode === "real") {
         const command = this.buildCommand(input);
-        const { stdout, stderr } = await execFileAsync(command.command, command.args, {
-          cwd: input.worktreePath,
-          env: process.env,
-          maxBuffer: 10 * 1024 * 1024,
-        });
+        const { stdout, stderr } = await executeRealCommand(
+          command,
+          input.worktreePath,
+        );
 
         await writeFile(stdoutPath, stdout, "utf8");
         await writeFile(stderrPath, stderr, "utf8");
@@ -101,7 +172,7 @@ export function createExecutionCommandRunner(options?: { mode?: "fake" | "real" 
           "utf8",
         );
 
-        const parsedSummary = stdout.trim() || summary;
+        const parsedSummary = extractSummary(stdout, summary);
         await ensureArtifactFile(
           artifactPath,
           `# ${input.stageType}\n\n${parsedSummary}\n`,
