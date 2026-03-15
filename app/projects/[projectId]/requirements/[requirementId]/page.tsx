@@ -46,19 +46,21 @@ export default async function RequirementDetailPage({
   async function createRunAction(formData: FormData) {
     "use server";
 
+    const runType = String(formData.get("runType") ?? "full_run") as
+      | "full_run"
+      | "stage_run";
     const targetStageValue = String(formData.get("targetStage") ?? "");
     const targetStage =
-      targetStageValue === "design" ||
-      targetStageValue === "development" ||
-      targetStageValue === "test"
+      runType === "stage_run" &&
+      (targetStageValue === "design" ||
+        targetStageValue === "development" ||
+        targetStageValue === "test")
         ? targetStageValue
         : undefined;
 
     await createExecutionRun({
       requirementId,
-      runType: String(formData.get("runType") ?? "full_run") as
-        | "full_run"
-        | "stage_run",
+      runType,
       executionMode: String(formData.get("executionMode") ?? "manual_gate") as
         | "manual_gate"
         | "auto_flow",

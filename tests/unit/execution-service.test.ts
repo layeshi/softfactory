@@ -127,3 +127,45 @@ test("creates a stage run with the target stage as current stage", async () => {
   expect(run.targetStage).toBe("test");
   expect(run.executionMode).toBe("auto_flow");
 });
+
+test("ignores targetStage for full runs instead of throwing", async () => {
+  const project = await prisma.project.create({
+    data: {
+      name: "Launch Factory",
+      slug: "launch-factory",
+      summary: "Handle launch form input safely",
+      goal: "Do not fail on full_run submissions",
+    },
+  });
+
+  const requirement = await prisma.requirement.create({
+    data: {
+      projectId: project.id,
+      title: "Launch without stage override",
+      originalRequest: "Start a full run from the requirement detail page.",
+      normalizedDescription: "Full runs should ignore targetStage form noise.",
+      priority: "high",
+    },
+  });
+
+  await prisma.requirementStage.createMany({
+    data: [
+      { requirementId: requirement.id, stageType: "requirement", status: "completed" },
+      { requirementId: requirement.id, stageType: "design", status: "pending_confirmation" },
+      { requirementId: requirement.id, stageType: "development", status: "not_started" },
+      { requirementId: requirement.id, stageType: "test", status: "not_started" },
+      { requirementId: requirement.id, stageType: "approval", status: "not_started" },
+    ],
+  });
+
+  const run = await createExecutionRun({
+    requirementId: requirement.id,
+    runType: "full_run",
+    executionMode: "manual_gate",
+    targetStage: "design",
+  });
+
+  expect(run.status).toBe("queued");
+  expect(run.currentStage).toBe("design");
+  expect(run.targetStage).toBeNull();
+});

@@ -44,7 +44,9 @@ function isExecutableRequirementStage(
 }
 
 export async function createExecutionRun(input: CreateExecutionRunInput) {
-  const data = createExecutionRunSchema.parse(input);
+  const normalizedInput =
+    input.runType === "full_run" ? { ...input, targetStage: undefined } : input;
+  const data = createExecutionRunSchema.parse(normalizedInput);
 
   const requirement = await prisma.requirement.findUnique({
     where: {
