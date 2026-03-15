@@ -6,15 +6,16 @@ type StatusPanelItem = {
 };
 
 type StatusPanelProps = {
+  eyebrow?: string;
   title: string;
   items: StatusPanelItem[];
 };
 
-export function StatusPanel({ title, items }: StatusPanelProps) {
+export function StatusPanel({ eyebrow, title, items }: StatusPanelProps) {
   return (
     <article className="status-panel">
       <div className="panel-heading">
-        <span className="hero-eyebrow">Snapshot</span>
+        {eyebrow ? <span className="hero-eyebrow">{eyebrow}</span> : null}
         <h3>{title}</h3>
       </div>
       <ul>

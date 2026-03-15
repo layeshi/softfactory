@@ -1,8 +1,19 @@
 import React from "react";
 import Link from "next/link";
-import { formatDate, titleizeStatus } from "@/lib/utils";
+import type { Locale } from "@/lib/i18n/messages";
+import { formatDate, resolveStatusLabel } from "@/lib/utils";
 
 type ProjectListProps = {
+  locale: Locale;
+  labels: {
+    emptyTitle: string;
+    emptyDescription: string;
+    project: string;
+    goal: string;
+    requirements: string;
+    updated: string;
+  };
+  statusLabels: Record<string, string>;
   projects: Array<{
     id: string;
     name: string;
@@ -15,12 +26,17 @@ type ProjectListProps = {
   }>;
 };
 
-export function ProjectList({ projects }: ProjectListProps) {
+export function ProjectList({
+  locale,
+  labels,
+  statusLabels,
+  projects,
+}: ProjectListProps) {
   if (projects.length === 0) {
     return (
       <article className="empty-panel">
-        <h3>No projects yet</h3>
-        <p>Create the first project to start tracking requirements and approvals.</p>
+        <h3>{labels.emptyTitle}</h3>
+        <p>{labels.emptyDescription}</p>
       </article>
     );
   }
@@ -31,26 +47,26 @@ export function ProjectList({ projects }: ProjectListProps) {
         <Link key={project.id} href={`/projects/${project.id}`} className="project-card">
           <div className="project-card-header">
             <div>
-              <span className="metric-label">Project</span>
+              <span className="metric-label">{labels.project}</span>
               <h3>{project.name}</h3>
             </div>
             <span className={`status-badge status-${project.status}`}>
-              {titleizeStatus(project.status)}
+              {resolveStatusLabel(project.status, statusLabels)}
             </span>
           </div>
           <p>{project.summary}</p>
           <dl>
             <div>
-              <dt>Goal</dt>
+              <dt>{labels.goal}</dt>
               <dd>{project.goal}</dd>
             </div>
             <div>
-              <dt>Requirements</dt>
+              <dt>{labels.requirements}</dt>
               <dd>{project.requirementCount}</dd>
             </div>
             <div>
-              <dt>Updated</dt>
-              <dd>{formatDate(project.updatedAt)}</dd>
+              <dt>{labels.updated}</dt>
+              <dd>{formatDate(project.updatedAt, locale)}</dd>
             </div>
           </dl>
         </Link>

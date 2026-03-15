@@ -2,28 +2,45 @@ import React from "react";
 import Link from "next/link";
 import { AppShell } from "@/components/layout/app-shell";
 import { ProjectList } from "@/components/projects/project-list";
+import { getRequestLocale } from "@/lib/i18n/get-locale";
+import { getTranslator } from "@/lib/i18n/get-translator";
 import { listProjects } from "@/lib/services/project-service";
 
 export default async function ProjectsPage() {
+  const locale = await getRequestLocale();
+  const t = getTranslator(locale);
   const projects = await listProjects();
 
   return (
     <AppShell
-      eyebrow="Projects"
-      title="Project Portfolio"
-      description="Browse every software initiative, track status, and jump into detailed requirement workspaces."
+      locale={locale}
+      eyebrow={t.pages.projects.eyebrow}
+      title={t.pages.projects.title}
+      description={t.pages.projects.description}
     >
       <div className="section-span">
         <div className="page-toolbar">
           <div>
-            <span className="metric-label">Overview</span>
-            <h3>All active projects</h3>
+            <span className="metric-label">{t.common.overview}</span>
+            <h3>{t.pages.projects.sectionTitle}</h3>
           </div>
           <Link href="/projects/new" className="action-link">
-            New project
+            {t.common.actions.newProject}
           </Link>
         </div>
-        <ProjectList projects={projects} />
+        <ProjectList
+          locale={locale}
+          labels={{
+            emptyTitle: t.common.empty.noProjectsTitle,
+            emptyDescription: t.common.empty.noProjectsDescription,
+            project: t.common.labels.project,
+            goal: t.common.fields.goal,
+            requirements: t.common.fields.requirements,
+            updated: t.common.fields.updated,
+          }}
+          statusLabels={t.status.project}
+          projects={projects}
+        />
       </div>
     </AppShell>
   );

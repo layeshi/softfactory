@@ -36,6 +36,12 @@ export type Messages = {
   };
   common: {
     overview: string;
+    labels: {
+      project: string;
+      prioritySuffix: string;
+      awaitingDecision: string;
+      generatedAt: string;
+    };
     actions: {
       newProject: string;
       createProject: string;
@@ -171,6 +177,12 @@ export const messages: Record<Locale, Messages> = {
     },
     common: {
       overview: "概览",
+      labels: {
+        project: "项目",
+        prioritySuffix: "优先级",
+        awaitingDecision: "等待操作人决策。",
+        generatedAt: "生成时间",
+      },
       actions: {
         newProject: "新建项目",
         createProject: "创建项目",
@@ -348,6 +360,12 @@ export const messages: Record<Locale, Messages> = {
     },
     common: {
       overview: "Overview",
+      labels: {
+        project: "Project",
+        prioritySuffix: "priority",
+        awaitingDecision: "Awaiting operator decision.",
+        generatedAt: "Generated",
+      },
       actions: {
         newProject: "New project",
         createProject: "Create project",

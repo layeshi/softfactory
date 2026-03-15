@@ -29,6 +29,7 @@ export default async function HomePage() {
         detail={t.dashboard.metrics.pendingApprovals.detail}
       />
       <StatusPanel
+        eyebrow={t.common.overview}
         title={t.dashboard.snapshot.title}
         items={[
           {
