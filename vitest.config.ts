@@ -6,6 +6,8 @@ export default defineConfig({
     globals: true,
     setupFiles: ["./vitest.setup.ts"],
     include: ["tests/**/*.test.ts", "tests/**/*.test.tsx"],
+    maxWorkers: 1,
+    fileParallelism: false,
   },
   resolve: {
     alias: {

@@ -1,0 +1,118 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Project {
+  id             String          @id @default(cuid())
+  name           String
+  slug           String          @unique
+  summary        String
+  goal           String
+  status         String          @default("draft")
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  requirements   Requirement[]
+  changeRequests ChangeRequest[]
+  documents      Document[]
+  approvals      Approval[]
+  activityLogs   ActivityLog[]
+}
+
+model Requirement {
+  id                    String                      @id @default(cuid())
+  projectId             String
+  title                 String
+  originalRequest       String
+  normalizedDescription String
+  priority              String
+  status                String                      @default("pending_triage")
+  lifecycleStatus       String                      @default("active")
+  version               Int                         @default(1)
+  createdAt             DateTime                    @default(now())
+  updatedAt             DateTime                    @updatedAt
+  project               Project                     @relation(fields: [projectId], references: [id])
+  stages                RequirementStage[]
+  documents             Document[]
+  approvals             Approval[]
+  activityLogs          ActivityLog[]
+  targetChanges         ChangeRequest[]             @relation("TargetRequirement")
+}
+
+model RequirementStage {
+  id            String               @id @default(cuid())
+  requirementId String
+  stageType     String
+  status        String               @default("not_started")
+  summary       String?
+  notes         String?
+  completedAt   DateTime?
+  updatedAt     DateTime             @updatedAt
+  requirement   Requirement          @relation(fields: [requirementId], references: [id])
+
+  @@unique([requirementId, stageType])
+}
+
+model ChangeRequest {
+  id                  String              @id @default(cuid())
+  projectId           String
+  targetRequirementId String?
+  changeType          String
+  proposedTitle       String?
+  proposedContent     String?
+  reason              String
+  impactSummary       String
+  status              String              @default("draft")
+  appliedAt           DateTime?
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  project             Project             @relation(fields: [projectId], references: [id])
+  targetRequirement   Requirement?        @relation("TargetRequirement", fields: [targetRequirementId], references: [id])
+  approvals           Approval[]
+  activityLogs        ActivityLog[]
+}
+
+model Document {
+  id            String       @id @default(cuid())
+  projectId     String
+  requirementId String?
+  documentType  String
+  title         String
+  version       Int          @default(1)
+  filePath      String
+  generatedAt   DateTime     @default(now())
+  project       Project      @relation(fields: [projectId], references: [id])
+  requirement   Requirement? @relation(fields: [requirementId], references: [id])
+}
+
+model Approval {
+  id              String         @id @default(cuid())
+  projectId       String
+  requirementId   String?
+  changeRequestId String?
+  approvalType    String
+  status          String         @default("pending")
+  comment         String?
+  decidedAt       DateTime?
+  createdAt       DateTime       @default(now())
+  project         Project        @relation(fields: [projectId], references: [id])
+  requirement     Requirement?   @relation(fields: [requirementId], references: [id])
+  changeRequest   ChangeRequest? @relation(fields: [changeRequestId], references: [id])
+}
+
+model ActivityLog {
+  id              String         @id @default(cuid())
+  projectId       String
+  requirementId   String?
+  changeRequestId String?
+  actionType      String
+  message         String
+  createdAt       DateTime       @default(now())
+  project         Project        @relation(fields: [projectId], references: [id])
+  requirement     Requirement?   @relation(fields: [requirementId], references: [id])
+  changeRequest   ChangeRequest? @relation(fields: [changeRequestId], references: [id])
+}
