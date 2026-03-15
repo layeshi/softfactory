@@ -1,3 +1,4 @@
+import { rm } from "node:fs/promises";
 import { beforeEach, expect, test } from "vitest";
 import { prisma } from "@/lib/db";
 import { approveExecutionDecision } from "@/lib/services/execution-decision-service";
@@ -72,4 +73,57 @@ test("approves a waiting execution decision and allows the run to continue", asy
   const detail = await getExecutionRunDetail(run.id);
   expect(detail?.decisions.filter((decision) => decision.status === "approved")).toHaveLength(1);
   expect(detail?.stageRuns.some((stageRun) => stageRun.stageType === "development")).toBe(true);
+});
+
+test("approving still re-queues the run when the task package file is missing", async () => {
+  const project = await createProject({
+    name: "Decision Recovery Factory",
+    summary: "Recover from missing task packages",
+    goal: "Keep approval flow operable",
+  });
+
+  const requirement = await createRequirement({
+    projectId: project.id,
+    title: "Resume after missing package",
+    originalRequest: "Allow approval to continue even if task.json was removed.",
+    normalizedDescription: "Approval flow should not depend on task package persistence.",
+    priority: "high",
+  });
+
+  await prisma.requirementStage.update({
+    where: {
+      requirementId_stageType: {
+        requirementId: requirement.id,
+        stageType: "requirement",
+      },
+    },
+    data: {
+      status: "completed",
+    },
+  });
+
+  const run = await createExecutionRun({
+    requirementId: requirement.id,
+    runType: "full_run",
+    executionMode: "manual_gate",
+  });
+
+  const firstPass = await processNextExecutionRun();
+
+  expect(firstPass?.status).toBe("waiting_for_decision");
+
+  await rm(firstPass!.taskPackagePath!, { force: true });
+
+  const pendingDecision = await prisma.executionDecision.findFirstOrThrow({
+    where: {
+      executionRunId: run.id,
+      status: "pending",
+    },
+  });
+
+  await expect(approveExecutionDecision(pendingDecision.id)).resolves.toMatchObject({
+    id: run.id,
+    status: "queued",
+    currentStage: "development",
+  });
 });

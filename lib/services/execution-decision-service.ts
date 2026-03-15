@@ -1,29 +1,56 @@
 import { readFile } from "node:fs/promises";
 import { prisma } from "@/lib/db";
+import { EXECUTABLE_REQUIREMENT_STAGES } from "@/lib/validators/execution-run";
 
-async function resolveNextStage(executionRunId: string, taskPackagePath: string | null) {
-  if (!taskPackagePath) {
+type ExecutionRunContext = {
+  id: string;
+  runType: string;
+  currentStage: string | null;
+  targetStage: string | null;
+  taskPackagePath: string | null;
+};
+
+async function resolveNextStageFromFallback(run: ExecutionRunContext) {
+  if (run.runType === "stage_run") {
     return null;
   }
 
-  const taskPackage = JSON.parse(await readFile(taskPackagePath, "utf8")) as {
+  const currentStageIndex = run.currentStage
+    ? EXECUTABLE_REQUIREMENT_STAGES.indexOf(
+        run.currentStage as (typeof EXECUTABLE_REQUIREMENT_STAGES)[number],
+      )
+    : -1;
+
+  return EXECUTABLE_REQUIREMENT_STAGES.at(currentStageIndex + 1) ?? null;
+}
+
+async function resolveNextStage(run: ExecutionRunContext) {
+  if (!run.taskPackagePath) {
+    return resolveNextStageFromFallback(run);
+  }
+
+  try {
+    const taskPackage = JSON.parse(await readFile(run.taskPackagePath, "utf8")) as {
     workflow: {
       stagesToRun: string[];
     };
-  };
+    };
 
-  const stageRuns = await prisma.executionStageRun.findMany({
-    where: {
-      executionRunId,
-    },
-  });
+    const stageRuns = await prisma.executionStageRun.findMany({
+      where: {
+        executionRunId: run.id,
+      },
+    });
 
-  return (
-    taskPackage.workflow.stagesToRun.find((stageType) => {
-      const stageRun = stageRuns.find((item) => item.stageType === stageType);
-      return stageRun?.status !== "succeeded";
-    }) ?? null
-  );
+    return (
+      taskPackage.workflow.stagesToRun.find((stageType) => {
+        const stageRun = stageRuns.find((item) => item.stageType === stageType);
+        return stageRun?.status !== "succeeded";
+      }) ?? null
+    );
+  } catch {
+    return resolveNextStageFromFallback(run);
+  }
 }
 
 export async function approveExecutionDecision(decisionId: string) {
@@ -32,7 +59,15 @@ export async function approveExecutionDecision(decisionId: string) {
       id: decisionId,
     },
     include: {
-      executionRun: true,
+      executionRun: {
+        select: {
+          id: true,
+          runType: true,
+          currentStage: true,
+          targetStage: true,
+          taskPackagePath: true,
+        },
+      },
       executionStageRun: true,
     },
   });
@@ -63,10 +98,7 @@ export async function approveExecutionDecision(decisionId: string) {
     });
   }
 
-  const nextStage = await resolveNextStage(
-    decision.executionRunId,
-    decision.executionRun.taskPackagePath,
-  );
+  const nextStage = await resolveNextStage(decision.executionRun);
 
   return prisma.executionRun.update({
     where: {
