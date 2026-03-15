@@ -79,7 +79,8 @@ export function RunDetailPanel({ labels, run }: RunDetailPanelProps) {
           {run.artifacts.map((artifact) => (
             <article key={artifact.id} className="stack-card">
               <h3>{artifact.title}</h3>
-              <p>{artifact.filePath}</p>
+              <p>{artifact.summary ?? artifact.filePath}</p>
+              <small>{artifact.filePath}</small>
             </article>
           ))}
         </div>

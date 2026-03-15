@@ -8,6 +8,9 @@ export type ExecutionCommandResult = {
   resultSnapshotPath: string;
   artifactPath: string;
   summary: string;
+  outcome?: string;
+  changes: string[];
+  artifactsCreated: string[];
 };
 
 type ExecuteStageCommandInput = {
@@ -41,23 +44,84 @@ async function ensureArtifactFile(path: string, content: string) {
   }
 }
 
-function extractSummary(stdout: string, fallback: string) {
+type ParsedExecutionPayload = {
+  summary: string;
+  outcome?: string;
+  changes: string[];
+  artifactsCreated: string[];
+};
+
+function parseExecutionPayload(value: string, fallback: string): ParsedExecutionPayload {
+  const trimmed = value.trim();
+  const fencedJsonMatch = trimmed.match(/```json\s*([\s\S]*?)\s*```/i);
+  const candidate = fencedJsonMatch?.[1]?.trim() ?? trimmed;
+
+  try {
+    const parsed = JSON.parse(candidate) as {
+      summary?: string;
+      outcome?: string;
+      changes?: string[];
+      artifactsCreated?: string[];
+      status?: string;
+    };
+
+    return {
+      summary:
+        typeof parsed.summary === "string" && parsed.summary.trim()
+          ? parsed.summary.trim()
+          : fallback,
+      outcome:
+        typeof parsed.outcome === "string"
+          ? parsed.outcome
+          : typeof parsed.status === "string"
+            ? parsed.status
+            : undefined,
+      changes: Array.isArray(parsed.changes)
+        ? parsed.changes.filter((item): item is string => typeof item === "string")
+        : [],
+      artifactsCreated: Array.isArray(parsed.artifactsCreated)
+        ? parsed.artifactsCreated.filter(
+            (item): item is string => typeof item === "string",
+          )
+        : [],
+    };
+  } catch {
+    return {
+      summary: trimmed || fallback,
+      outcome: undefined,
+      changes: [],
+      artifactsCreated: [],
+    };
+  }
+}
+
+function parseResultOutput(stdout: string, fallback: string): ParsedExecutionPayload {
   const trimmed = stdout.trim();
 
   if (!trimmed) {
-    return fallback;
+    return {
+      summary: fallback,
+      outcome: undefined,
+      changes: [],
+      artifactsCreated: [],
+    };
   }
 
   try {
     const parsed = JSON.parse(trimmed) as { result?: string };
     if (typeof parsed.result === "string" && parsed.result.trim()) {
-      return parsed.result.trim();
+      return parseExecutionPayload(parsed.result, fallback);
     }
   } catch {
-    return trimmed;
+    return parseExecutionPayload(trimmed, fallback);
   }
 
-  return trimmed;
+  return {
+    summary: trimmed,
+    outcome: undefined,
+    changes: [],
+    artifactsCreated: [],
+  };
 }
 
 function executeRealCommand(command: ExecutionCommand, cwd: string) {
@@ -158,6 +222,7 @@ export function createExecutionCommandRunner(options?: { mode?: "fake" | "real" 
 
         await writeFile(stdoutPath, stdout, "utf8");
         await writeFile(stderrPath, stderr, "utf8");
+        const parsedResult = parseResultOutput(stdout, summary);
         await writeFile(
           resultSnapshotPath,
           JSON.stringify(
@@ -165,6 +230,10 @@ export function createExecutionCommandRunner(options?: { mode?: "fake" | "real" 
               runId: input.runId,
               stageType: input.stageType,
               rawOutput: stdout,
+              summary: parsedResult.summary,
+              outcome: parsedResult.outcome,
+              changes: parsedResult.changes,
+              artifactsCreated: parsedResult.artifactsCreated,
             },
             null,
             2,
@@ -172,7 +241,7 @@ export function createExecutionCommandRunner(options?: { mode?: "fake" | "real" 
           "utf8",
         );
 
-        const parsedSummary = extractSummary(stdout, summary);
+        const parsedSummary = parsedResult.summary;
         await ensureArtifactFile(
           artifactPath,
           `# ${input.stageType}\n\n${parsedSummary}\n`,
@@ -184,6 +253,9 @@ export function createExecutionCommandRunner(options?: { mode?: "fake" | "real" 
           resultSnapshotPath,
           artifactPath,
           summary: parsedSummary,
+          outcome: parsedResult.outcome,
+          changes: parsedResult.changes,
+          artifactsCreated: parsedResult.artifactsCreated,
         } satisfies ExecutionCommandResult;
       }
 
@@ -219,6 +291,9 @@ export function createExecutionCommandRunner(options?: { mode?: "fake" | "real" 
         resultSnapshotPath,
         artifactPath,
         summary,
+        outcome: "success",
+        changes: [],
+        artifactsCreated: [`${input.stageType}-summary.md`],
       } satisfies ExecutionCommandResult;
     },
   };

@@ -71,5 +71,6 @@ test("shows run summary and stage results", async () => {
   render(await RunDetailPage({ params: Promise.resolve({ runId: "run-1" }) }));
 
   expect(screen.getByText(/manual gate/i)).toBeInTheDocument();
-  expect(screen.getByText(/design summary/i)).toBeInTheDocument();
+  expect(screen.getByText("Design summary")).toBeInTheDocument();
+  expect(screen.getByText(/created a design summary/i)).toBeInTheDocument();
 });

@@ -44,7 +44,7 @@ test("uses spawn with ignored stdin for the real runner and writes outputs", asy
       "import json",
       "import sys",
       "_ = sys.stdin.read()",
-      'print(json.dumps({"type":"result","subtype":"success","result":"{\\"ok\\":true}"}))',
+      'print(json.dumps({"type":"result","subtype":"success","result":"```json\\n{\\"status\\": \\"completed\\", \\"summary\\": \\"Structured design summary\\", \\"outcome\\": \\"success\\", \\"changes\\": [\\"Created design-summary.md\\"], \\"artifactsCreated\\": [\\"design-summary.md\\"]}\\n```"}))',
       "",
     ].join("\n"),
     "utf8",
@@ -62,8 +62,14 @@ test("uses spawn with ignored stdin for the real runner and writes outputs", asy
     taskPackagePath: join(sandboxRoot, "task.json"),
   });
 
-  expect(result.summary).toContain("\"ok\":true");
+  expect(result.summary).toBe("Structured design summary");
+  expect(result.outcome).toBe("success");
+  expect(result.changes).toEqual(["Created design-summary.md"]);
+  expect(result.artifactsCreated).toEqual(["design-summary.md"]);
   await expect(readFile(result.stdoutPath, "utf8")).resolves.toContain("\"type\": \"result\"");
+  await expect(readFile(result.resultSnapshotPath, "utf8")).resolves.toContain(
+    "\"summary\": \"Structured design summary\"",
+  );
 }, 10000);
 
 test("writes deterministic fake runner outputs", async () => {
