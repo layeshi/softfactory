@@ -2,33 +2,47 @@ import React from "react";
 import { AppShell } from "@/components/layout/app-shell";
 import { MetricCard } from "@/components/dashboard/metric-card";
 import { StatusPanel } from "@/components/dashboard/status-panel";
+import { getRequestLocale } from "@/lib/i18n/get-locale";
+import { getTranslator } from "@/lib/i18n/get-translator";
 import { getDashboardSummary } from "@/lib/services/dashboard-service";
 
 export default async function HomePage() {
+  const locale = await getRequestLocale();
+  const t = getTranslator(locale);
   const summary = await getDashboardSummary();
 
   return (
     <AppShell
-      eyebrow="Phase One"
-      title="Software Factory"
-      description="Operate projects, requirements, approvals, and generated documents from one local command center."
+      locale={locale}
+      eyebrow={t.dashboard.eyebrow}
+      title={t.dashboard.title}
+      description={t.dashboard.description}
     >
       <MetricCard
-        label="Projects"
+        label={t.dashboard.metrics.projects.label}
         value={summary.projectCount}
-        detail="Active delivery streams tracked in the local factory."
+        detail={t.dashboard.metrics.projects.detail}
       />
       <MetricCard
-        label="Pending approvals"
+        label={t.dashboard.metrics.pendingApprovals.label}
         value={summary.pendingApprovals}
-        detail="Human confirmation gates waiting for a decision."
+        detail={t.dashboard.metrics.pendingApprovals.detail}
       />
       <StatusPanel
-        title="Operational snapshot"
+        title={t.dashboard.snapshot.title}
         items={[
-          { label: "In-progress projects", value: String(summary.inProgressProjects) },
-          { label: "Blocked projects", value: String(summary.blockedProjects) },
-          { label: "Recent changes", value: String(summary.recentChanges.length) },
+          {
+            label: t.dashboard.snapshot.inProgressProjects,
+            value: String(summary.inProgressProjects),
+          },
+          {
+            label: t.dashboard.snapshot.blockedProjects,
+            value: String(summary.blockedProjects),
+          },
+          {
+            label: t.dashboard.snapshot.recentChanges,
+            value: String(summary.recentChanges.length),
+          },
         ]}
       />
     </AppShell>

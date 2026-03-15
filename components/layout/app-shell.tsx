@@ -24,7 +24,14 @@ export function AppShell({
 
   return (
     <div className="app-frame">
-      <SidebarNav />
+      <SidebarNav
+        labels={{
+          brandKicker: t.layout.brandKicker,
+          brandTitle: t.layout.brandTitle,
+          brandDescription: t.layout.brandDescription,
+          nav: t.layout.nav,
+        }}
+      />
       <main className="app-main">
         <header className="hero-panel">
           <div className="hero-topbar">
